@@ -1,0 +1,20 @@
+{
+  "name": "C-PICK 월례대회",
+  "short_name": "C-PICK 대진표",
+  "description": "C-PICK 피클볼 월례대회 대진표 — 참석자 자동 편성, 점수 입력, 카톡 공유, 이미지 저장",
+  "lang": "ko",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "id": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "background_color": "#eef2f7",
+  "theme_color": "#12335f",
+  "categories": ["sports", "productivity"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
