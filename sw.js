@@ -2,7 +2,7 @@
    - 핵심 파일은 stale-while-revalidate: 캐시로 즉시 열고, 뒤에서 새 버전을 받아 다음 실행에 반영
    - 오프라인에서도 앱이 바로 뜸
 */
-var CACHE = 'cpick-bracket-v2';
+var CACHE = 'cpick-bracket-v3';
 var CORE = [
   './',
   './index.html',
