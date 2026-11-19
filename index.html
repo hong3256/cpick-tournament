@@ -295,6 +295,27 @@ details.rules[open]>summary .chev{transform:rotate(180deg)}
 .imgwrap img{display:block;width:100%;height:auto;border-radius:8px;background:#fff}
 .modal-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin-top:10px}
 
+/* ============ sync bar (구글 시트 실시간 동기화) ============ */
+.syncbar{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin:10px 0 12px}
+.sbadge{display:inline-flex;align-items:center;gap:5px;height:29px;padding:0 12px;border-radius:999px;white-space:nowrap;
+  font-size:12px;font-weight:800;letter-spacing:-.01em;border:1px solid var(--line);background:#fff;color:var(--muted)}
+.sbadge.live{background:#e8f6ee;border-color:#bfe3ce;color:#166b47}
+.sbadge.busy{background:#fff5e2;border-color:#f0dcae;color:#8a5c06}
+.sbadge.err{background:#fdeeee;border-color:#f3c9c9;color:#a4302f}
+.sin{flex:1 1 140px;min-width:0;font-size:11.5px;line-height:1.35;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.syncbar .mini{flex:0 0 auto}
+.pin-in{display:block;width:100%;height:54px;margin:8px 0 4px;border:1px solid var(--line);border-radius:12px;background:#fff;
+  text-align:center;font-size:24px;font-weight:800;letter-spacing:.42em;text-indent:.42em;color:var(--ink)}
+.pin-in:focus{outline:2px solid var(--blue);outline-offset:1px;border-color:var(--blue)}
+.cfg-in{display:block;width:100%;height:44px;margin:8px 0 4px;border:1px solid var(--line);border-radius:10px;background:#fff;padding:0 11px;font-size:13px}
+.cfg-in:focus{outline:2px solid var(--blue);outline-offset:1px;border-color:var(--blue)}
+.modal-note.warn{color:var(--red)}
+.modal-note.ok{color:var(--green)}
+/* 보기 전용 모드: 칸을 눌러도 키보드·선택이 열리지 않게 */
+body.ro-mode input,body.ro-mode select,body.ro-mode textarea{pointer-events:none}
+body.ro-mode input[readonly],body.ro-mode select:disabled{background:#f6f8fb;color:var(--ink2)}
+body.ro-mode .title{cursor:default}
+
 /* ============ mobile ============ */
 @media screen and (max-width:759px){
   .wrap{padding:10px 10px 80px}
@@ -313,6 +334,10 @@ details.rules[open]>summary .chev{transform:rotate(180deg)}
   .btn{flex:1 1 auto;justify-content:center}
   .toolbar{gap:6px}
   .toolbar .btn{flex:1 1 calc(50% - 4px);padding:10px 6px;font-size:12.5px;gap:5px;white-space:nowrap}
+  .syncbar{gap:6px;margin:9px 0 10px}
+  .sbadge{height:27px;padding:0 10px;font-size:11.5px}
+  .sin{flex:1 1 100%;order:3;font-size:11px;white-space:normal}
+  .syncbar .mini{flex:1 1 auto;justify-content:center;font-size:12px;padding:8px 6px}
   .prow{grid-template-columns:minmax(0,1fr) 60px auto 26px;gap:5px}
   .prow input.pname{padding:8px;font-size:13.5px}
   .pchk{font-size:11px}
@@ -412,6 +437,13 @@ details.rules[open]>summary .chev{transform:rotate(180deg)}
       <label class="mi"><span class="k">참가자</span><input data-bind="header.members" aria-label="참가자"></label>
     </div>
   </header>
+
+  <div class="syncbar" data-syncbar>
+    <span class="sbadge" data-sync-badge>⚪ 연동 전</span>
+    <span class="sin" data-sync-info>이 기기에만 저장됩니다</span>
+    <button class="mini" data-act="adminToggle" type="button" hidden>🔐 관리자 입력</button>
+    <button class="mini" data-act="syncSettings" type="button">⚙️ 연동 설정</button>
+  </div>
 
   <div class="board" role="status" aria-live="polite">
     <div class="pane">
@@ -549,7 +581,7 @@ details.rules[open]>summary .chev{transform:rotate(180deg)}
 
   <p class="foot">
     이름 · 점수 · 비고만 입력하면 표와 대진 트리가 함께 바뀝니다.<br>
-    입력 내용은 이 브라우저에 자동 저장되며, <b>인쇄 / PDF 저장</b> 후 단톡방에 공유할 수 있습니다.
+    입력 내용은 이 브라우저에 자동 저장되고, 구글 시트 연동 시에는 5초마다 자동으로 맞춰집니다. <b>인쇄 / PDF 저장</b> 후 단톡방에 공유할 수 있습니다.
   </p>
 </div>
 
@@ -575,6 +607,34 @@ details.rules[open]>summary .chev{transform:rotate(180deg)}
     <div class="modal-actions">
       <button class="btn primary" data-img-download type="button">PNG 저장</button>
       <button class="btn" data-img-close type="button">닫기</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" data-pin-modal hidden>
+  <div class="modal-card">
+    <h3>🔐 관리자 입력</h3>
+    <p class="modal-note">관리자 PIN 4자리를 입력하면 명단·대진·점수를 고칠 수 있습니다.</p>
+    <input class="pin-in" data-pin-input type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="4" aria-label="관리자 PIN" placeholder="••••">
+    <p class="modal-note" data-pin-msg hidden></p>
+    <div class="modal-actions">
+      <button class="btn primary" data-pin-ok type="button">확인</button>
+      <button class="btn" data-pin-cancel type="button">취소</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" data-cfg-modal hidden>
+  <div class="modal-card">
+    <h3>⚙️ 연동 설정</h3>
+    <p class="modal-note">Google Apps Script 웹 앱 주소를 붙여넣으면, 이 대진표가 구글 시트와 5초마다 자동으로 맞춰집니다.</p>
+    <input class="cfg-in" data-cfg-url type="url" inputmode="url" autocomplete="off" spellcheck="false" aria-label="Apps Script 웹 앱 주소" placeholder="https://script.google.com/macros/s/…/exec">
+    <p class="modal-note" data-cfg-msg hidden></p>
+    <div class="modal-actions">
+      <button class="btn primary" data-cfg-save type="button">저장하고 연동</button>
+      <button class="btn" data-cfg-test type="button">연결 테스트</button>
+      <button class="btn" data-cfg-clear type="button">연동 해제</button>
+      <button class="btn" data-cfg-close type="button">닫기</button>
     </div>
   </div>
 </div>
@@ -781,12 +841,455 @@ details.rules[open]>summary .chev{transform:rotate(180deg)}
     catch (e) { setHint('저장 공간이 부족해 저장하지 못했습니다'); }
   }
   function save(now) {
+    syncTouch();                 /* 연동 중·관리자 모드일 때만 원격 저장을 예약한다 */
     if (!storageOK) { return; }
     if (now) { clearTimeout(saveTimer); saveTimer = null; writeNow(); return; }
     clearTimeout(saveTimer);
     saveTimer = setTimeout(function () { saveTimer = null; writeNow(); }, 180);
   }
   function flushSave() { if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; writeNow(); } }
+
+  /* ================= 실시간 동기화 (구글 시트 + Google Apps Script) =================
+     · DEFAULT_SYNC_URL 에 웹 앱 주소를 넣어 두면 설정 없이 모든 기기가 자동 연동
+     · ?api=<웹앱 URL> 또는 [⚙️ 연동 설정]에서 저장한 주소도 사용
+     · 연동 중에는 기본 '보기 전용', PIN 확인 후에만 입력 모드(0.6초 디바운스 자동 저장)
+  */
+  var DEFAULT_SYNC_URL = '';                  // 예: 'https://script.google.com/macros/s/…/exec'
+  var CFG_KEY = 'cpick-sync-config-v1';
+  var SYNC_POLL_MS = 5000;
+  var SYNC_PUSH_MS = 600;
+
+  var sync = {
+    url: '', locked: false, admin: false, pin: '',
+    status: 'off', updatedAt: '', lastErr: '',
+    applying: false, pushing: false, dirty: false,
+    lastRemote: '', pollTimer: null, pushTimer: null, failCount: 0
+  };
+
+  var SYNC_LOCKED_ACTS = ['generate', 'regenP1', 'regenP2', 'addP', 'delP', 'gset',
+    'pasteToggle', 'pasteAdd', 'pasteReplace', 'addTeam', 'delTeam', 'resetScores', 'restore'];
+
+  function syncClock(s) {
+    var m = /(\d{2}:\d{2})(:\d{2})?/.exec(String(s || ''));
+    return m ? (m[1] + (m[3] ? m[3] : '')) : '';
+  }
+
+  function syncPaint() {
+    var badge = $('[data-sync-badge]'), info = $('[data-sync-info]');
+    var adminBtn = $('[data-act="adminToggle"]');
+    var text, cls, note;
+    if (!sync.url) {
+      text = '⚪ 연동 전'; cls = '';
+      note = '이 기기에만 저장됩니다 · ⚙️ 연동 설정에서 구글 시트 연결';
+    } else if (sync.status === 'error') {
+      text = '🔴 연결 오류'; cls = 'err';
+      note = '마지막 저장본을 보여 주고 있어요 · ' + (sync.lastErr || '네트워크 확인');
+    } else if (sync.status === 'connecting') {
+      text = '🔄 동기화 중'; cls = 'busy';
+      note = '최신 대진표를 불러오는 중입니다';
+    } else if (sync.status === 'saving') {
+      text = '🔄 동기화 중'; cls = 'busy';
+      note = '구글 시트에 저장하는 중입니다';
+    } else {
+      text = '🟢 실시간 동기화'; cls = 'live';
+      note = (sync.admin ? '관리자 입력 모드' : '보기 전용') + ' · 5초마다 자동 갱신' +
+        (sync.updatedAt ? ' · 마지막 저장 ' + syncClock(sync.updatedAt) : '');
+    }
+    if (badge) { badge.textContent = text; badge.className = 'sbadge' + (cls ? ' ' + cls : ''); }
+    if (info) { info.textContent = note; }
+    if (adminBtn) {
+      adminBtn.hidden = !sync.url;
+      adminBtn.textContent = sync.admin ? '🔓 관리자 잠금' : '🔐 관리자 입력';
+      adminBtn.classList.toggle('on', !!sync.admin);
+    }
+  }
+
+  function syncUrlFromQuery() {
+    try {
+      var q = new URLSearchParams(location.search);
+      return String(q.get('api') || '').trim();
+    } catch (e) { return ''; }
+  }
+
+  function syncLoadCfg() {
+    var q = syncUrlFromQuery();
+    if (q && /^https?:\/\//.test(q)) { sync.url = q; }
+    if (!sync.url && storageOK) {
+      try {
+        var raw = localStorage.getItem(CFG_KEY);
+        if (raw) {
+          var o = JSON.parse(raw);
+          if (o && typeof o.url === 'string' && /^https?:\/\//.test(o.url)) { sync.url = o.url.trim(); }
+        }
+      } catch (e) { }
+    }
+    if (!sync.url && DEFAULT_SYNC_URL) { sync.url = DEFAULT_SYNC_URL; }
+  }
+
+  function syncStoreCfg(u) {
+    try {
+      if (u) { localStorage.setItem(CFG_KEY, JSON.stringify({ url: u, at: Date.now() })); }
+      else { localStorage.removeItem(CFG_KEY); }
+    } catch (e) { }
+  }
+
+  function syncHide(which) {
+    var m = $(which === 'pin' ? '[data-pin-modal]' : '[data-cfg-modal]');
+    if (m) { m.hidden = true; }
+  }
+
+  function syncIsEditing() {
+    var a = document.activeElement;
+    if (!a || a === document.body) { return false; }
+    if (a.isContentEditable) { return true; }
+    return (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT');
+  }
+
+  function syncSetLocked(locked) {
+    sync.locked = !!locked && !!sync.url && !sync.admin;
+    document.body.classList.toggle('ro-mode', sync.locked);
+    syncPaint();
+  }
+
+  /* ---------- 원격 읽기 (5초 폴링) ---------- */
+  function syncFetch() {
+    if (!sync.url) { return; }
+    var url = sync.url + (sync.url.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now();
+    var ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    var abortTimer = ctl ? setTimeout(function () { try { ctl.abort(); } catch (e) { } }, 12000) : null;
+    var opts = { method: 'GET', cache: 'no-store', redirect: 'follow' };
+    if (ctl) { opts.signal = ctl.signal; }
+    fetch(url, opts)
+      .then(function (r) {
+        if (!r.ok) { throw new Error('HTTP ' + r.status); }
+        return r.text();
+      })
+      .then(function (txt) {
+        if (abortTimer) { clearTimeout(abortTimer); }
+        var j;
+        try { j = JSON.parse(txt); } catch (e) { throw new Error('응답을 읽지 못했습니다'); }
+        if (!j || j.ok !== true) { throw new Error((j && (j.message || j.error)) || '응답 오류'); }
+        sync.failCount = 0;
+        sync.lastErr = '';
+        sync.updatedAt = j.updatedAt || '';
+        if (sync.status === 'connecting' || sync.status === 'error') {
+          sync.status = sync.pushing ? 'saving' : 'live';
+        }
+        if (j.data) { syncApplyRemote(j.data); }
+        syncPaint();
+      })
+      .catch(function (err) {
+        if (abortTimer) { clearTimeout(abortTimer); }
+        sync.failCount++;
+        if (sync.failCount >= 2) {
+          sync.status = 'error';
+          sync.lastErr = String(err && err.message || err);
+        }
+        syncPaint();
+      });
+  }
+
+  function syncApplyRemote(remote) {
+    var str;
+    try { str = JSON.stringify(remote); } catch (e) { return; }
+    if (str === sync.lastRemote) { return; }
+    /* 다른 사람이 입력 중인 칸을 덮어쓰지 않도록: 입력 중·저장 대기 중이면 이번 주기는 건너뜀 */
+    if (sync.dirty || sync.pushing || syncIsEditing()) { return; }
+    sync.lastRemote = str;
+    var mine;
+    try { mine = JSON.stringify(state); } catch (e) { mine = ''; }
+    if (mine === str) { return; }
+    sync.applying = true;
+    try {
+      state = normalize(remote);
+      if (storageOK) { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { } }
+      renderAll();
+    } finally {
+      sync.applying = false;
+    }
+    setHint('구글 시트에서 받아온 최신 대진표입니다 · ' + stamp());
+  }
+
+  function syncStartPolling() {
+    syncStopPolling();
+    if (!sync.url) { syncSetLocked(false); return; }
+    sync.status = 'connecting';
+    syncSetLocked(!sync.admin);
+    syncFetch();
+    sync.pollTimer = setInterval(syncFetch, SYNC_POLL_MS);
+  }
+
+  function syncStopPolling() {
+    if (sync.pollTimer) { clearInterval(sync.pollTimer); sync.pollTimer = null; }
+  }
+
+  /* ---------- 원격 저장 (관리자 모드·0.6초 디바운스) ---------- */
+  function syncTouch() {
+    if (!sync.url || !sync.admin || sync.applying) { return; }
+    sync.dirty = true;
+    if (sync.pushTimer) { clearTimeout(sync.pushTimer); }
+    sync.pushTimer = setTimeout(syncPush, SYNC_PUSH_MS);
+  }
+
+  function syncPush() {
+    sync.pushTimer = null;
+    if (!sync.url || !sync.admin) { return; }
+    var snapshot, body;
+    try { snapshot = JSON.stringify(state); } catch (e) { return; }
+    if (snapshot === sync.lastRemote && !sync.dirty) { return; }
+    body = JSON.stringify({ pin: sync.pin, data: state, at: new Date().toISOString() });
+    sync.dirty = false;
+    sync.pushing = true;
+    sync.status = 'saving';
+    syncPaint();
+    fetch(sync.url, {
+      method: 'POST',
+      /* CORS 프리플라이트(OPTIONS)를 피하려면 text/plain 으로 보내야 함 */
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: body,
+      redirect: 'follow'
+    })
+      .then(function (r) {
+        if (!r.ok) { throw new Error('HTTP ' + r.status); }
+        return r.text();
+      })
+      .then(function (txt) {
+        var j;
+        try { j = JSON.parse(txt); } catch (e) { throw new Error('응답을 읽지 못했습니다'); }
+        if (j && j.ok) {
+          sync.lastRemote = snapshot;
+          sync.updatedAt = j.updatedAt || sync.updatedAt;
+          sync.lastErr = '';
+          sync.status = 'live';
+          setHint('구글 시트에 저장됨 · ' + stamp());
+          return;
+        }
+        if (j && j.error === 'PIN_MISMATCH') {
+          sync.admin = false; sync.pin = ''; sync.dirty = false;
+          sync.status = 'live';
+          syncSetLocked(true);
+          toast('관리자 PIN이 바뀐 것 같습니다 · 다시 잠갔습니다', 3600);
+          return;
+        }
+        throw new Error((j && (j.message || j.error)) || '저장하지 못했습니다');
+      })
+      .catch(function (err) {
+        sync.status = 'error';
+        sync.lastErr = String(err && err.message || err);
+        setHint('저장하지 못했습니다 · 다시 시도합니다');
+        if (sync.admin) {
+          sync.dirty = true;
+          if (sync.pushTimer) { clearTimeout(sync.pushTimer); }
+          sync.pushTimer = setTimeout(syncPush, 3000);
+        }
+      })
+      .then(function () {
+        sync.pushing = false;
+        if (!sync.dirty && sync.pushTimer) { clearTimeout(sync.pushTimer); sync.pushTimer = null; }
+        syncPaint();
+      });
+  }
+
+  /* ---------- 관리자 모드 ---------- */
+  function syncAskPin() {
+    var modal = $('[data-pin-modal]'), inp = $('[data-pin-input]'), msg = $('[data-pin-msg]');
+    if (!modal) { return; }
+    if (inp) { inp.value = ''; }
+    if (msg) { msg.hidden = true; msg.textContent = ''; msg.className = 'modal-note'; }
+    modal.hidden = false;
+    setTimeout(function () { if (inp) { inp.focus(); } }, 40);
+  }
+
+  function syncPinMsg(txt, kind) {
+    var msg = $('[data-pin-msg]');
+    if (!msg) { return; }
+    msg.hidden = !txt;
+    msg.textContent = txt || '';
+    msg.className = 'modal-note' + (kind ? ' ' + kind : '');
+  }
+
+  function syncVerifyPin(pin) {
+    pin = String(pin || '').replace(/[^0-9]/g, '').slice(0, 8);
+    if (pin.length < 4) { syncPinMsg('PIN 4자리를 입력해 주세요'); return; }
+    var ok = $('[data-pin-ok]');
+    if (ok) { ok.disabled = true; ok.textContent = '확인 중…'; }
+    syncPinMsg('');
+    fetch(sync.url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'verify_pin', pin: pin }),
+      redirect: 'follow'
+    })
+      .then(function (r) { return r.text(); })
+      .then(function (txt) {
+        var j;
+        try { j = JSON.parse(txt); } catch (e) { throw new Error('응답을 읽지 못했습니다'); }
+        if (j && j.ok) {
+          sync.admin = true;
+          sync.pin = pin;
+          syncSetLocked(false);
+          syncHide('pin');
+          toast('관리자 입력 모드입니다 · 점수·명단을 고치면 자동 저장됩니다', 3400);
+          syncPush(); /* 시트가 비어 있어도 지금 화면을 올려 둔다 */
+          return;
+        }
+        if (j && j.error === 'PIN_MISMATCH') { syncPinMsg('PIN이 맞지 않습니다 · 다시 확인해 주세요', 'warn'); return; }
+        syncPinMsg('확인하지 못했습니다 · ' + ((j && (j.message || j.error)) || '연결 오류'), 'warn');
+      })
+      .catch(function (err) {
+        syncPinMsg('연결 오류 · ' + String(err && err.message || err), 'warn');
+      })
+      .then(function () {
+        if (ok) { ok.disabled = false; ok.textContent = '확인'; }
+      });
+  }
+
+  function syncLock(reason) {
+    sync.admin = false;
+    sync.pin = '';
+    sync.dirty = false;
+    if (sync.pushTimer) { clearTimeout(sync.pushTimer); sync.pushTimer = null; }
+    syncSetLocked(true);
+    setHint('보기 전용 · 🔐 관리자 입력 후에 수정할 수 있습니다');
+    if (reason) { toast(reason, 3000); }
+  }
+
+  /* ---------- 연동 설정 ---------- */
+  function syncCfgMsg(txt, kind) {
+    var msg = $('[data-cfg-msg]');
+    if (!msg) { return; }
+    msg.hidden = !txt;
+    msg.textContent = txt || '';
+    msg.className = 'modal-note' + (kind ? ' ' + kind : '');
+  }
+
+  function syncOpenCfg() {
+    var modal = $('[data-cfg-modal]'), inp = $('[data-cfg-url]');
+    if (!modal) { return; }
+    if (inp) { inp.value = sync.url || ''; }
+    syncCfgMsg(sync.url ? '연동 중입니다 · 주소를 바꾸면 새 주소로 다시 연결합니다' : '아직 연동 전입니다', '');
+    modal.hidden = false;
+    setTimeout(function () { if (inp) { inp.focus(); inp.select(); } }, 40);
+  }
+
+  function syncCleanUrl(v) {
+    var s = String(v || '').trim();
+    var m = /https?:\/\/[^\s"'<>]+/.exec(s);
+    if (m) { s = m[0]; }
+    return s.replace(/[),.;]+$/, '');
+  }
+
+  function syncCfgSave() {
+    var inp = $('[data-cfg-url]');
+    var u = syncCleanUrl(inp && inp.value);
+    if (!u) { syncCfgMsg('Apps Script 웹 앱 주소를 붙여넣어 주세요', 'warn'); return; }
+    if (!/^https?:\/\//.test(u)) { syncCfgMsg('https:// 로 시작하는 주소여야 합니다', 'warn'); return; }
+    if (!/\/exec(\?|$)/.test(u) && !/script\.google\.com/.test(u)) {
+      syncCfgMsg('배포된 웹 앱 주소(…/exec)를 넣어 주세요', 'warn'); return;
+    }
+    sync.url = u;
+    syncStoreCfg(u);
+    sync.admin = false;
+    sync.pin = '';
+    sync.lastRemote = '';
+    syncHide('cfg');
+    syncStartPolling();
+    toast('연동을 켰습니다 · 최신 대진표를 불러오는 중이에요', 3000);
+  }
+
+  function syncCfgTest() {
+    var inp = $('[data-cfg-url]'), u = syncCleanUrl(inp && inp.value);
+    if (!u || !/^https?:\/\//.test(u)) { syncCfgMsg('먼저 주소를 넣어 주세요', 'warn'); return; }
+    syncCfgMsg('연결 확인 중…', '');
+    fetch(u + (u.indexOf('?') >= 0 ? '&' : '?') + 'action=ping&t=' + Date.now(),
+      { method: 'GET', cache: 'no-store', redirect: 'follow' })
+      .then(function (r) { return r.text(); })
+      .then(function (txt) {
+        var j;
+        try { j = JSON.parse(txt); } catch (e) { throw new Error('응답을 읽지 못했습니다'); }
+        if (j && (j.ok || j.pong)) {
+          syncCfgMsg('연결됐습니다 ✓' + (j.updatedAt ? ' · 마지막 저장 ' + j.updatedAt : ' · 아직 저장된 대진표 없음'), 'ok');
+        } else {
+          syncCfgMsg('응답이 올바르지 않습니다 · ' + ((j && (j.message || j.error)) || ''), 'warn');
+        }
+      })
+      .catch(function (err) { syncCfgMsg('연결하지 못했습니다 · ' + String(err && err.message || err), 'warn'); });
+  }
+
+  function syncCfgClear() {
+    sync.url = '';
+    syncStoreCfg('');
+    syncStopPolling();
+    sync.admin = false;
+    sync.pin = '';
+    sync.status = 'off';
+    sync.updatedAt = '';
+    sync.lastRemote = '';
+    syncSetLocked(false);
+    syncHide('cfg');
+    toast('연동을 해제했습니다 · 이 기기에서 자유롭게 입력할 수 있어요', 3200);
+    syncPaint();
+  }
+
+  /* ---------- 초기화 · 입력 잠금 ---------- */
+  function syncInit() {
+    syncLoadCfg();
+    var inp = $('[data-cfg-url]');
+    if (inp) { inp.value = sync.url || ''; }
+    if (sync.url) {
+      setHint('보기 전용 · 🔐 관리자 입력 후에 수정할 수 있습니다');
+      syncStartPolling();
+    } else {
+      syncSetLocked(false);
+    }
+    syncPaint();
+  }
+
+  /* 보기 전용: 대진·명단을 바꾸는 버튼은 눌러도 아무 일도 없게 */
+  document.addEventListener('click', function (e) {
+    if (!sync.locked) { return; }
+    var btn = e.target && e.target.closest ? e.target.closest('[data-act]') : null;
+    if (!btn) { return; }
+    if (SYNC_LOCKED_ACTS.indexOf(btn.getAttribute('data-act')) < 0) { return; }
+    e.preventDefault();
+    e.stopPropagation();
+    toast('보기 전용입니다 · 🔐 관리자 입력을 눌러 주세요', 2600);
+  }, true);
+
+  /* 보기 전용: 제목·규칙 문구 수정도 막는다 */
+  document.addEventListener('beforeinput', function (e) {
+    if (!sync.locked) { return; }
+    if (e.target && e.target.isContentEditable) { e.preventDefault(); }
+  }, true);
+
+  /* 설정/관리자 모달 버튼 */
+  document.addEventListener('click', function (e) {
+    var t = e.target;
+    if (!t || !t.closest) { return; }
+    if (t.closest('[data-pin-cancel]') || t.matches('[data-pin-modal]')) { syncHide('pin'); return; }
+    if (t.closest('[data-pin-ok]')) { syncVerifyPin(($('[data-pin-input]') || {}).value || ''); return; }
+    if (t.closest('[data-cfg-close]') || t.matches('[data-cfg-modal]')) { syncHide('cfg'); return; }
+    if (t.closest('[data-cfg-save]')) { syncCfgSave(); return; }
+    if (t.closest('[data-cfg-test]')) { syncCfgTest(); return; }
+    if (t.closest('[data-cfg-clear]')) { syncCfgClear(); return; }
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter') { return; }
+    if (e.target && e.target.matches && e.target.matches('[data-pin-input]')) {
+      e.preventDefault();
+      syncVerifyPin(e.target.value);
+    } else if (e.target && e.target.matches && e.target.matches('[data-cfg-url]')) {
+      e.preventDefault();
+      syncCfgSave();
+    }
+  });
+
+  document.addEventListener('input', function (e) {
+    var t = e.target;
+    if (!t || !t.matches) { return; }
+    if (t.matches('[data-pin-input]')) { t.value = t.value.replace(/[^0-9]/g, '').slice(0, 4); }
+  });
 
   /* ---------- participants ---------- */
   function findP(id) {
@@ -2550,6 +3053,7 @@ details.rules[open]>summary .chev{transform:rotate(180deg)}
   }
 
   document.addEventListener('input', function (e) {
+    if (sync.locked) { return; }
     var t = e.target;
     if (t.matches('[data-score]')) { onScore(t); return; }
     if (t.matches('[data-pfield="name"]')) {
@@ -2610,6 +3114,7 @@ details.rules[open]>summary .chev{transform:rotate(180deg)}
 
   document.addEventListener('change', function (e) {
     var t = e.target;
+    if (sync.locked) { return; }
     if (t.matches('[data-cancel]')) {
       var i = parseInt(t.getAttribute('data-cancel').slice(3), 10);
       if (state.part1[i]) { state.part1[i].cancel = t.checked; }
@@ -2690,7 +3195,13 @@ details.rules[open]>summary .chev{transform:rotate(180deg)}
       return;
     }
     var act = btn.getAttribute('data-act');
-    if (act === 'kakaoShare') {
+    if (act === 'adminToggle') {
+      if (!sync.url) { syncOpenCfg(); return; }
+      if (sync.admin) { syncLock('관리자 모드를 잠갔습니다 · 보기 전용으로 돌아갑니다'); }
+      else { syncAskPin(); }
+    } else if (act === 'syncSettings') {
+      syncOpenCfg();
+    } else if (act === 'kakaoShare') {
       doKakaoShare();
     } else if (act === 'saveImage') {
       saveBracketImage();
@@ -2802,6 +3313,7 @@ details.rules[open]>summary .chev{transform:rotate(180deg)}
   rebuildP2();
   renderAll();
   setHint(storageOK ? '입력하면 이 브라우저에 자동 저장됩니다' : '이 브라우저에서는 자동 저장이 막혀 있습니다');
+  syncInit();
 
   /* debug hook (harmless; used for testing) */
   window.cpick = {
@@ -2819,7 +3331,11 @@ details.rules[open]>summary .chev{transform:rotate(180deg)}
     cardBlob: function () { return cardBlob(buildCardCanvas()); },
     saveImage: saveBracketImage,
     kakao: doKakaoShare,
-    render: renderAll
+    render: renderAll,
+    sync: function () { return sync; },
+    syncFetch: syncFetch,
+    syncPush: syncPush,
+    syncInit: syncInit
   };
 })();
 </script>
